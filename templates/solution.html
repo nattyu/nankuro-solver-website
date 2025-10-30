@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container text-center my-5">
+
+  <!-- タイトル -->
+  <div class="mb-4">
+    <h1>解答結果</h1>
+  </div>
+
+  <!-- グリッド形式の解答カード -->
+  <div class="solution-grid mx-auto mb-4">
+    {% for entry in solution %}
+      <div class="solution-cell">
+        <div class="solution-number">{{ entry.num }}</div>
+        <div class="solution-kanji">{{ entry.kanji }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- 解答テーブル -->
+  <div class="mb-5">
+    <h2 class="mb-3">解答テーブル</h2>
+    <div class="table-responsive d-inline-block">
+      <table class="table table-bordered">
+        <tbody>
+          {% for i in range(grid_shape.rows) %}
+            <tr>
+              {% for j in range(grid_shape.cols) %}
+                {% set cell_val = raw_grid[i][j] %}
+                {% set cell_num = num_grid[i][j] %}
+                <td class="p-1 text-center align-middle" style="width:2rem; height:2rem;">
+                  {% if cell_val == "■" %}
+                    ■
+                  {% elif cell_num is not none %}
+                    {% set match = solution | selectattr("num", "equalto", cell_num | int) | list %}
+                    {% if match %}
+                      {% set kanji = match[0].kanji | trim %}
+                      {% if kanji %}
+                        <span>{{ kanji }}</span>
+                      {% else %}
+                        <span>{{ cell_num }}</span>
+                      {% endif %}
+                    {% else %}
+                      <span>{{ cell_num }}</span>
+                    {% endif %}
+                  {% elif cell_val %}
+                    <span>{{ cell_val }}</span>
+                  {% else %}
+                    &nbsp;
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 戻るボタン -->
+  <div>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">戻る</a>
+  </div>
+
+</div>
+{% endblock %}

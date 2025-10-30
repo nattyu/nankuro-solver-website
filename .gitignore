@@ -1,0 +1,83 @@
+#################################
+# 1. Python / Flask / Jupyter
+#################################
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# 仮想環境
+.venv/
+venv/
+.env/
+.env.*
+*.env
+
+#################################
+# 2. Flask / Web App 実行ログ・キャッシュ
+#################################
+*.log
+*.tmp
+*.bak
+instance/
+*.sqlite3
+*.db
+
+#################################
+# 3. 学習成果物・モデル・重いファイル
+#################################
+# PyTorch / YOLO重み
+*.pt
+*.pth
+*.onnx
+
+# YOLO出力・学習ディレクトリ
+custom_yolo_kanji_1/
+custom_yolo_kanji_black_cell/
+custom_yolo_number_1/
+output_logs/
+outputs/
+
+# その他の重い生成物
+models/weights/
+models/checkpoints/
+
+#################################
+# 4. 中間生成物 / 実験用データ
+#################################
+add_train/
+grid_csv/
+train/
+validation/
+images/
+predicted_kanji/
+
+#################################
+# 5. IDE / エディタ / OS 系
+#################################
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+Thumbs.db
+Desktop.ini
+~$*
+
+#################################
+# 6. データファイル (ローカル利用想定)
+#################################
+*.csv
+!jukugo.csv
+!jukugo_full.csv
+*.tsv
+*.gz
+*.zip
+*.json
+
+#################################
+# 7. セキュリティ関連
+#################################
+AWS.txt
+secrets.txt
+config_private.py

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- プログレスバーオーバーレイ -->
+  <div id="progressOverlay">
+    <div class="progress rounded-pill">
+      <div id="progressBar"
+           class="progress-bar bg-info progress-bar-striped progress-bar-animated rounded-pill"
+           role="progressbar"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           style="width: 0%;">
+        <span id="progressText">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mx-auto shadow-sm" style="max-width: 90%;">
+    <div class="card-body">
+      <h1 class="card-title text-center mb-4">漢字ナンクロ OCR デモ</h1>
+
+      <!-- 画像選択 -->
+      <div class="form-group">
+        <label for="imgInput">画像を選択</label>
+        <input type="file" class="form-control-file" id="imgInput" accept="image/*">
+      </div>
+
+      <!-- ブラシサイズ -->
+      <div class="form-group">
+        <label for="brushSize">マスクブラシサイズ: <span id="brushValue">15</span>px</label>
+        <input type="range" class="custom-range" id="brushSize" min="1" max="50" value="15">
+      </div>
+
+      <!-- キャンバス -->
+      <div class="d-flex justify-content-center mb-4">
+        <canvas id="c" class="border" style="max-width:100%; max-height:90%;"></canvas>
+      </div>
+
+      <!-- 実行ボタン -->
+      <div class="text-center">
+        <button id="runBtn" class="btn btn-primary btn-lg">OCR を実行</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- ライブラリ -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/fabric@4.6.0/dist/fabric.min.js"></script>
+  <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="px-1 py-4 result-container-wrapper">
+  <h1 class="text-center mb-4">検出＋編集画面</h1>
+  <form id="solverForm" action="{{ url_for('solver.solve_route') }}" method="post">
+    {% set row_count = grid_data | length %}
+    {% set col_count = grid_data[0] | length %}
+    {% set layout_class = 'horizontal' if row_count >= col_count else 'vertical' %}
+
+    <div class="result-container {{ layout_class }}">
+      <div class="result-image-wrapper mb-3">
+        <img
+          id="gridImage"
+          src="data:image/jpeg;base64,{{ vis_b64 }}"
+          alt="Detected"
+          class="img-fluid border"
+        />
+      </div>
+
+      <div class="result-table-wrapper mb-3">
+        <div class="table-responsive">
+          <table class="table table-bordered mb-0">
+            <tbody>
+              {% for row in grid_data %}
+                {% set i = loop.index0 %}
+                <tr>
+                  {% for cell in row %}
+                    {% set j = loop.index0 %}
+                    <td class="p-1 text-center align-middle{% if cell is none %} bg-empty{% endif %}">
+                      <input
+                        type="text"
+                        name="r{{ i }}c{{ j }}"
+                        value="{{ cell }}"
+                        class="table-input"
+                      />
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-2">
+      <div class="col text-center">
+        <button type="submit" class="btn btn-success btn-lg px-5">
+          ナンクロを解く
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- プログレスバーオーバーレイ -->
+<div id="progressOverlay">
+  <div class="progress rounded-pill">
+    <div id="progressBar"
+         class="progress-bar bg-info progress-bar-striped progress-bar-animated rounded-pill"
+         role="progressbar"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         style="width: 0%;">
+      <span id="progressText">0%</span>
+    </div>
+  </div>
+</div>
+
+<!-- JS 読み込み -->
+<script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
+<script src="{{ url_for('static', filename='js/result.js') }}"></script>
+{% endblock %}
