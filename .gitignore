@@ -13,6 +13,8 @@ venv/
 .env/
 .env.*
 *.env
+.venv_nankuro/
+venv_nankuro/
 
 #################################
 # 2. Flask / Web App 実行ログ・キャッシュ
