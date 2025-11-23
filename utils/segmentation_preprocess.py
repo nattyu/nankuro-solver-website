@@ -1,5 +1,5 @@
-from ultralytics import YOLO
-import cv2
+from ultralytics import YOLO # pyright: ignore
+import cv2 # type: ignore
 import numpy as np
 from pathlib import Path
 import os

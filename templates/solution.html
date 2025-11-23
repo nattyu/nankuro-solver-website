@@ -17,6 +17,61 @@
     {% endfor %}
   </div>
 
+  <!-- 仮置き熟語プレビュー -->
+  {% if word_infos is defined and word_infos %}
+  <div class="mb-5">
+    <h2 class="mb-3">仮置き熟語プレビュー</h2>
+    <p class="text-muted">
+      ※ solver による仮置き結果です。必ずしも正解とは限りません。
+    </p>
+    <div class="table-responsive d-inline-block">
+      <table class="table table-sm table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">向き</th>
+            <th scope="col">仮置き熟語</th>
+            <th scope="col">状態</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in word_infos %}
+            {# positions = [[row, col], ...] を想定 #}
+            {% set pos0 = w.positions[0] if w.positions else [None, None] %}
+            {% set pos1 = w.positions[1] if w.positions|length > 1 else pos0 %}
+            {% set r0 = pos0[0] %}
+            {% set c0 = pos0[1] %}
+            {% set r1 = pos1[0] %}
+            {% set c1 = pos1[1] %}
+            {% if r0 is not none and r1 is not none and r0 == r1 %}
+              {% set orientation = "横" %}
+            {% elif c0 is not none and c1 is not none and c0 == c1 %}
+              {% set orientation = "縦" %}
+            {% else %}
+              {% set orientation = "？" %}
+            {% endif %}
+
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ orientation }}</td>
+              <td class="text-start">
+                <span style="font-size: 1.1rem;">{{ w.text }}</span>
+              </td>
+              <td>
+                {% if w.unresolved %}
+                  <span class="badge bg-secondary">未確定含む</span>
+                {% else %}
+                  <span class="badge bg-success">すべて仮置き済み</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- 解答テーブル -->
   <div class="mb-5">
     <h2 class="mb-3">解答テーブル</h2>
@@ -32,6 +87,7 @@
                   {% if cell_val == "■" %}
                     ■
                   {% elif cell_num is not none %}
+                    {# 数字マス → 対応する記号の漢字があれば漢字、なければ数字のまま #}
                     {% set match = solution | selectattr("num", "equalto", cell_num | int) | list %}
                     {% if match %}
                       {% set kanji = match[0].kanji | trim %}

@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, Response, stream_with_context
+from flask import Blueprint, render_template, request, Response, stream_with_context # type: ignore
 import json
 import base64
-import cv2
+import cv2 # type: ignore
 import numpy as np
 
 import config
@@ -42,7 +42,8 @@ def run_yolo(img):
         res_num, res_kan,
         num_rec, num_cls,
         kan_rec, kan_cls,
-        font, yolo_num.names, yolo_kan.names
+        font, yolo_num.names, yolo_kan.names,
+        draw=False,
     )
 
 

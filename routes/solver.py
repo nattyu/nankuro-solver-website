@@ -1,7 +1,7 @@
-from flask import Blueprint, request, render_template, Response, stream_with_context
+from flask import Blueprint, request, render_template, Response, stream_with_context  # type: ignore
 import pandas as pd
 import re
-import numpy as np
+import numpy as np  # noqa: F401  # 使っていないが今後の拡張用に残す場合
 import json
 import unicodedata
 from solver import solve
@@ -15,7 +15,7 @@ def solve_route():
         try:
             # 1) フォームデータを dict で取得
             data = {key: request.form.getlist(key) for key in request.form.keys()}
-            yield json.dumps({'progress': 10}) + "\n"
+            yield json.dumps({'progress': 10}, ensure_ascii=False) + "\n"
 
             # 2) r{i}c{j}形式のキーから最大行・列番号を取得
             row_idxs = []
@@ -29,7 +29,7 @@ def solve_route():
             max_row = max(row_idxs) if row_idxs else -1
             max_col = max(col_idxs) if col_idxs else -1
 
-            yield json.dumps({'progress': 20}) + "\n"
+            yield json.dumps({'progress': 20}, ensure_ascii=False) + "\n"
 
             # 3) m×n のリストを組み立て
             grid = []
@@ -41,14 +41,28 @@ def solve_route():
                     row.append(val)
                 grid.append(row)
 
-            yield json.dumps({'progress': 40}) + "\n"
+            yield json.dumps({'progress': 40}, ensure_ascii=False) + "\n"
 
             # 4) DataFrame に変換
             df = pd.DataFrame(grid)
 
             # 5) 自動解法実行
-            solution = solve(df)
-            yield json.dumps({'progress': 60}) + "\n"
+            solve_result = solve(df)
+            yield json.dumps({'progress': 60}, ensure_ascii=False) + "\n"
+
+            # solve() の戻り値は現在:
+            # {
+            #   "mapping": [ {symbol, kanji, num}, ... ],
+            #   "words":   [ {text, positions, has_symbol, unresolved}, ... ]
+            # }
+            # 旧仕様（リストを直接返す）の場合にも一応対応しておく
+            if isinstance(solve_result, dict):
+                solution = solve_result.get("mapping", [])
+                word_infos = solve_result.get("words", [])
+            else:
+                # 互換性用フォールバック: 旧バージョンの solve 形式
+                solution = solve_result
+                word_infos = []
 
             # 6) 数字のみのグリッドを作成（正規化対応）
             number_grid = []
@@ -68,20 +82,25 @@ def solve_route():
             C = max_col + 1
             raw_grid = df.values.tolist()
 
-            yield json.dumps({'progress': 90}) + "\n"
+            yield json.dumps({'progress': 90}, ensure_ascii=False) + "\n"
 
             # 8) 最終HTMLレンダリング → 出力
+            #   solution:   記号 → 漢字の割り当てリスト
+            #   word_infos: 仮置き熟語情報リスト（solver.py で生成）
             html = render_template(
                 "solution.html",
                 solution=solution,
+                word_infos=word_infos,
                 num_grid=number_grid,
                 raw_grid=raw_grid,
-                grid_shape={"rows": R, "cols": C}
+                grid_shape={"rows": R, "cols": C},
             )
-            yield json.dumps({'progress': 100}) + "\n"
+            yield json.dumps({'progress': 100}, ensure_ascii=False) + "\n"
             yield html
 
         except Exception as e:
-            yield f'{{"error": "サーバー例外: {str(e)}"}}\n'
+            # エラー時も NDJSON 形式で返す
+            err = {"error": f"サーバー例外: {str(e)}"}
+            yield json.dumps(err, ensure_ascii=False) + "\n"
 
     return Response(generate(), mimetype='application/x-ndjson')

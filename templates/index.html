@@ -24,21 +24,18 @@
         <input type="file" class="form-control-file" id="imgInput" accept="image/*">
       </div>
 
-      <!-- ブラシサイズ -->
-      <div class="form-group">
-        <label for="brushSize">マスクブラシサイズ: <span id="brushValue">15</span>px</label>
-        <input type="range" class="custom-range" id="brushSize" min="1" max="50" value="15">
-      </div>
-
-      <!-- キャンバス -->
+      <!-- プレビュー（任意） -->
       <div class="d-flex justify-content-center mb-4">
-        <canvas id="c" class="border" style="max-width:100%; max-height:90%;"></canvas>
+        <img id="imgPreview" class="img-fluid d-none border" style="max-height: 70vh;" />
       </div>
 
       <!-- 実行ボタン -->
       <div class="text-center">
-        <button id="runBtn" class="btn btn-primary btn-lg">OCR を実行</button>
+        <button id="runBtn" class="btn btn-primary btn-lg" disabled>OCR を実行</button>
       </div>
+
+      <!-- 結果表示エリア -->
+      <div id="resultArea" class="mt-4"></div>
     </div>
   </div>
 {% endblock %}
@@ -47,6 +44,9 @@
   <!-- ライブラリ -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/fabric@4.6.0/dist/fabric.min.js"></script>
+
+  <!-- ★ fabric.js はもう不要なので削除 ★ -->
+  {# <script src="https://unpkg.com/fabric@4.6.0/dist/fabric.min.js"></script> #}
+
   <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

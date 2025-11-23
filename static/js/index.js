@@ -1,155 +1,171 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const canvas     = new fabric.Canvas('c');
-  const imgInput   = document.getElementById('imgInput');
-  const brushSize  = document.getElementById('brushSize');
-  const brushValue = document.getElementById('brushValue');
-  const runBtn     = document.getElementById('runBtn');
-  const overlay    = document.getElementById('progressOverlay');
-  const bar        = document.getElementById('progressBar');
-  const txt        = document.getElementById('progressText');
+// static/js/index.js
 
-  let scale = 1;
-  let corners = [];
+document.addEventListener("DOMContentLoaded", () => {
+  const imgInput      = document.getElementById("imgInput");
+  const runBtn        = document.getElementById("runBtn");
+  const overlay       = document.getElementById("progressOverlay");
+  const bar           = document.getElementById("progressBar");
+  const txt           = document.getElementById("progressText");
+  const imgPreview    = document.getElementById("imgPreview"); // あれば使う（なければ無視）
 
-  // ブラシカーソル設定
-  function setBrushCursor(size) {
-    const r = size / 2;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r}" fill="rgba(255,0,0,0.3)" /></svg>`;
-    const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${r} ${r}, auto`;
-    canvas.upperCanvasEl.style.cursor = url;
-    canvas.lowerCanvasEl.style.cursor = url;
+  // 初期状態
+  if (overlay) {
+    overlay.style.display = "none";
+  }
+  if (runBtn) {
+    runBtn.disabled = true;
   }
 
-  // ブラシサイズ変更
-  brushSize.addEventListener('input', e => {
-    const size = parseInt(e.target.value, 10);
-    brushValue.textContent = size;
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.width = size;
-      setBrushCursor(size);
+  // プログレス更新
+  function setProgress(p) {
+    const v = Math.max(0, Math.min(100, p));
+    if (bar) {
+      bar.style.width = v + "%";
     }
-  });
+    if (txt) {
+      txt.textContent = v + "%";
+    }
+  }
 
-  // 画像読み込み
-  imgInput.addEventListener('change', e => {
-    corners = [];
-    canvas.clear();
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => fabric.Image.fromURL(evt.target.result, img => {
-      const maxW = window.innerWidth * 0.9;
-      const maxH = window.innerHeight * 1.0;
-      const scaleW = maxW / img.width;
-      const scaleH = maxH / img.height;
-      scale = Math.min(1, scaleW, scaleH);
+  // 画像選択時のプレビューとボタン有効化
+  if (imgInput) {
+    imgInput.addEventListener("change", () => {
+      const file = imgInput.files[0];
 
-      img.set({ scaleX: scale, scaleY: scale });
-      canvas.setWidth(img.width * scale);
-      canvas.setHeight(img.height * scale);
-      canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-      canvas.isDrawingMode = false;
-      canvas.upperCanvasEl.style.cursor = 'default';
-      canvas.lowerCanvasEl.style.cursor = 'default';
-      alert('まず4点をクリックして透視補正範囲を指定してください');
-    });
-    reader.readAsDataURL(file);
-  });
-
-  // 4点指定
-  canvas.on('mouse:down', opt => {
-    if (corners.length < 4) {
-      const pt = canvas.getPointer(opt.e);
-      corners.push([pt.x / scale, pt.y / scale]);
-      canvas.add(new fabric.Circle({
-        left: pt.x - 5,
-        top:  pt.y - 5,
-        radius: 5,
-        fill:   'lime',
-        selectable: false,
-        evented: false
-      }));
-      if (corners.length === 4) {
-        alert('4点指定完了。次にマスクを描画してください');
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.color = 'rgba(255,0,0,0.3)';
-        const size = parseInt(brushSize.value, 10);
-        canvas.freeDrawingBrush.width = size;
-        setBrushCursor(size);
+      if (!file) {
+        if (imgPreview) {
+          imgPreview.classList.add("d-none");
+        }
+        if (runBtn) {
+          runBtn.disabled = true;
+        }
+        return;
       }
-    }
-  });
+
+      // プレビュー（imgPreview がある場合のみ）
+      if (imgPreview) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imgPreview.src = e.target.result;
+          imgPreview.classList.remove("d-none");
+        };
+        reader.readAsDataURL(file);
+      }
+
+      if (runBtn) {
+        runBtn.disabled = false;
+      }
+    });
+  }
 
   // OCR 実行
-  runBtn.addEventListener('click', () => {
-    if (corners.length !== 4) {
-      return alert('透視補正用の4点をすべて指定してください');
-    }
-    if (!imgInput.files.length) {
-      return alert('画像を選択してください');
-    }
-    const originalFile = imgInput.files[0];
+  if (runBtn) {
+    runBtn.addEventListener("click", () => {
+      if (!imgInput || !imgInput.files.length) {
+        alert("画像を選択してください。");
+        return;
+      }
 
-    // マスク抽出
-    const bg = canvas.backgroundImage;
-    canvas.backgroundImage = null;
-    canvas.renderAll();
-    canvas.lowerCanvasEl.toBlob(async maskBlob => {
-      canvas.backgroundImage = bg;
-      canvas.renderAll();
+      const originalFile = imgInput.files[0];
+
+      // UI ロック & プログレス初期化
+      runBtn.disabled = true;
+      imgInput.disabled = true;
+      if (overlay) {
+        overlay.style.display = "flex";
+      }
+      setProgress(0);
 
       const formData = new FormData();
-      formData.append('image', originalFile);
-      formData.append('mask', maskBlob, 'mask.png');
-      formData.append('corners', JSON.stringify(corners));
+      // ★ 画像だけ送る。mask / corners はもう使わない
+      formData.append("image", originalFile);
 
-      overlay.style.display = 'flex';
-      bar.style.width = '0%';
-      txt.textContent = '0%';
+      fetch("/process", { method: "POST", body: formData })
+        .then((res) => {
+          if (!res.body) {
+            throw new Error("ストリーミングレスポンスが利用できません。");
+          }
 
-      fetch('/process', { method: 'POST', body: formData })
-        .then(res => {
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
-          let resultHtml = '';
+          let buffer = "";
+          let resultHtml = "";
 
           function readChunk() {
             return reader.read().then(({ done, value }) => {
               if (done) {
+                if (overlay) {
+                  overlay.style.display = "none";
+                }
+                // 最後に HTML があればそのまま描画
                 if (resultHtml) {
-                  window.history.pushState({}, '', '/result');
+                  window.history.pushState({}, "", "/result");
                   document.open();
                   document.write(resultHtml);
                   document.close();
                 }
+                // UI 解放
+                runBtn.disabled = false;
+                imgInput.disabled = false;
                 return;
               }
+
               const chunk = decoder.decode(value, { stream: true });
-              chunk.split('\n').forEach(line => {
-                if (!line.trim()) return;
+              buffer += chunk;
+              const lines = buffer.split("\n");
+              buffer = lines.pop(); // 最後の行は途中かもしれないので次回へ
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                // まず JSON として解釈（progress / error）
+                let obj = null;
                 try {
-                  const obj = JSON.parse(line);
-                  if (obj.progress !== undefined) {
-                    bar.style.width = obj.progress + '%';
-                    txt.textContent = obj.progress + '%';
-                  } else if (obj.error) {
-                    throw new Error(obj.error);
-                  }
-                } catch {
-                  resultHtml += line + '\n';
+                  obj = JSON.parse(trimmed);
+                } catch (e) {
+                  obj = null;
                 }
-              });
+
+                if (obj) {
+                  if (obj.progress !== undefined) {
+                    setProgress(obj.progress);
+                  }
+                  if (obj.error) {
+                    // エラーなら即通知して終了
+                    if (overlay) {
+                      overlay.style.display = "none";
+                    }
+                    runBtn.disabled = false;
+                    imgInput.disabled = false;
+                    alert(obj.error);
+                    // これ以上読んでも意味がないのでストリームを止める
+                    reader.cancel();
+                    return;
+                  }
+                } else {
+                  // JSON でない行は result.html の本体とみなす
+                  resultHtml += line + "\n";
+                }
+              }
+
               return readChunk();
             });
           }
 
           return readChunk();
         })
-        .catch(err => {
-          overlay.style.display = 'none';
+        .catch((err) => {
           console.error(err);
+          if (overlay) {
+            overlay.style.display = "none";
+          }
+          runBtn.disabled = false;
+          if (imgInput) {
+            imgInput.disabled = false;
+          }
           alert(`処理中にエラーが発生しました:\n${err.message}`);
         });
-    }, 'image/png', 0.8);
-  });
+    });
+  }
 });
